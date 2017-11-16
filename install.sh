@@ -4,7 +4,7 @@
 virtualenv -p python3 .env
 source .env/bin/activate
 
-# installation requirements
+# installation dependencies
 pip install numpy
 pip install tensorflow
 deactivate
@@ -13,4 +13,3 @@ deactivate
 wget http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
 tar -xzvf cifasr-10-python.tar.gz
 rm cifar-10-python.tar.gz
-
