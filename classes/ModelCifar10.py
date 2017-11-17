@@ -41,6 +41,9 @@ class ModelCifar10:
         self._hidden_size = int(hidden_size)
         self._output_size = int(output_size)
 
+        # Correct labels
+        y_ = tf.placeholder(tf.float32, [None, self._output_size])
+
         # Input
         self.x = tf.placeholder(tf.float32, [None, self._input_size])
 
@@ -50,7 +53,9 @@ class ModelCifar10:
             self.W1 = tf.get_variable('W1', [self._input_size, self._hidden_size], initializer=tf.random_normal_initializer())
             self.b1 = tf.get_variable('b1', [self._hidden_size, ], initializer=tf.random_normal_initializer())
             # Activation
-            self.y1 = tf.nn.relu(tf.matmul(self.x, self.W1) + self.b1)
+            self.h1 = tf.nn.relu(tf.matmul(self.x, self.W1) + self.b1)
+
+        logging.info('First layer build successfull..')
 
         # Layer 2
         with tf.variable_scope('layer2'):
@@ -58,16 +63,31 @@ class ModelCifar10:
             self.W2 = tf.get_variable('W2', [self._hidden_size, self._output_size], initializer=tf.random_normal_initializer())
             self.b2 = tf.get_variable('b2', [self._output_size, ], initializer=tf.random_normal_initializer())
             # Activation
-            self.y2 = tf.nn.relu(tf.matmul(self.y1, self.W2) + self.b2)
+            output = tf.nn.softmax(tf.matmul(self.h1, self.W2) + self.b2)
+
+        logging.info('Second layer build successfull..')
+
+        # define the loss function
+        self.cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(output), reduction_indices=[1]))
+
+        logging.info('Loss function initialized..')
+
+        # define training step and accuracy
+        train_step = tf.train.MomentumOptimizer(learning_rate=0.1, momentum=0.9).minimize(self.cross_entropy)
+        correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(y_, 1))
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+        logging.info('Training step and accuracy defined..')
+
+    """--------------------------------------------------------------------------------------------------------------"""
+
+    def run(self):
+        # create a saver
+        saver = tf.train.Saver()
 
         # Add an op to initialize the variables.
         self.init_op = tf.global_variables_initializer()
 
-        logging.info('Output layer size argument passed..')
-
-    """--------------------------------------------------------------------------------------------------------------"""
-
-    def launch(self):
         with tf.Session() as sess:
             # Run the init operation.
             sess.run(self.init_op)
