@@ -1,9 +1,23 @@
 import tensorflow as tf
-import numpy as np
 import logging
+
+from classes.Utils import Utils
+
+
+MODEL = 10
+
+# TODO: To think about that approach and find more appropriate way
+DIRECTORY = "/Users/vladimirsmirnov/PycharmProjects/python-tensorflow-cifar-10/"
+
+DATA_URL_CIFAR_10 = 'http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
+DATA_URL_CIFAR_100 = 'http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz'
 
 
 class ModelCifar10:
+    image_width = 32
+    image_height = 32
+    image_depth = 3
+
     """
     A two-layer fully-connected neural network. The net has an input dimension of
     N, a hidden layer dimension of H, and performs classification over C classes.
@@ -40,6 +54,9 @@ class ModelCifar10:
         self._input_size = int(input_size)
         self._hidden_size = int(hidden_size)
         self._output_size = int(output_size)
+
+        if not Utils.download():
+            logging.error("Dataset could not be downloaded..")
 
         # Correct labels
         y_ = tf.placeholder(tf.float32, [None, self._output_size])
@@ -82,49 +99,7 @@ class ModelCifar10:
     """--------------------------------------------------------------------------------------------------------------"""
 
     def run(self):
-        # create a saver
-        saver = tf.train.Saver()
-
-        # Add an op to initialize the variables.
-        self.init_op = tf.global_variables_initializer()
-
-        with tf.Session() as sess:
-            # Run the init operation.
-            sess.run(self.init_op)
+        pass
 
     """--------------------------------------------------------------------------------------------------------------"""
 
-    def read(self, file):
-        """
-        Read data.
-
-        Read bunch of data for 10000 images from CIFAR-10 file.
-
-        Parameters
-        ----------
-        file : string
-            File name
-
-        Returns
-        -------
-        dict
-            Dictionary with the following elements:
-            -- data - a 10000x3072 numpy array of uint8s. Each row of the array stores a 32x32 colour image.
-            The first 1024 entries contain the red channel values, the next 1024 the green, and the final 1024 the blue.
-            The image is stored in row-major order, so that the first 32 entries of the array are the red channel values of the first row of the image.
-            -- labels - a list of 10000 numbers in the range 0-9. The number at index i indicates the label of the ith image in the array data.
-
-        """
-        import pickle
-        with open(file, 'rb') as fo:
-            dictionary = pickle.load(fo, encoding='bytes')
-        return dictionary
-
-    def loss(self):
-        pass
-
-    def train(self):
-        pass
-
-    def predict(self):
-        pass

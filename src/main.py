@@ -8,7 +8,6 @@ logging.basicConfig(level=logging.INFO)
 def serve(config):
     model = ModelCifar10.ModelCifar10(config.input_size, config.hidden_size, config.output_size)
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
 
