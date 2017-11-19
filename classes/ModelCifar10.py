@@ -4,20 +4,7 @@ import logging
 from classes.Utils import Utils
 
 
-MODEL = 10
-
-# TODO: To think about that approach and find more appropriate way
-DIRECTORY = "/Users/vladimirsmirnov/PycharmProjects/python-tensorflow-cifar-10/"
-
-DATA_URL_CIFAR_10 = 'http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
-DATA_URL_CIFAR_100 = 'http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz'
-
-
 class ModelCifar10:
-    image_width = 32
-    image_height = 32
-    image_depth = 3
-
     """
     A two-layer fully-connected neural network. The net has an input dimension of
     N, a hidden layer dimension of H, and performs classification over C classes.
@@ -57,6 +44,10 @@ class ModelCifar10:
 
         if not Utils.download():
             logging.error("Dataset could not be downloaded..")
+            return
+
+        # Data loading from dataset
+        images, labels = Utils.load_training_data()
 
         # Correct labels
         y_ = tf.placeholder(tf.float32, [None, self._output_size])
