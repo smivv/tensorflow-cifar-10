@@ -25,7 +25,7 @@ _images_per_file = 10000
 _num_images_train = _num_files_train * _images_per_file
 _num_images_test = _num_files_test * _images_per_file
 
-DIRECTORY = "C:\\Users\\Conf\\PycharmProjects\\python-tensorflow-cifar-10\\"
+DIRECTORY = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if MODEL == 10:
     DIRECTORY = os.path.join(DIRECTORY, 'cifar-10-batches-py')
@@ -147,8 +147,6 @@ class Utils:
         """
         Uploads and extracts Cifar-10 data to default folder
         """
-
-
 
         if os.path.isdir(DIRECTORY):
             logging.info("Found cifar-{} data in {} folder.".format(MODEL, DIRECTORY))
