@@ -7,34 +7,7 @@ import errno
 import tqdm
 import os
 
-MODEL = 10
-
-img_width = 32
-img_height = 32
-num_channels = 3
-
-img_size_flat = img_width * img_height * num_channels
-
-num_classes = 10
-
-_num_files_train = 5
-_num_files_test = 1
-
-_images_per_file = 10000
-
-_num_images_train = _num_files_train * _images_per_file
-_num_images_test = _num_files_test * _images_per_file
-
-DIRECTORY = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-if MODEL == 10:
-    DIRECTORY = os.path.join(DIRECTORY, 'cifar-10-batches-py')
-else:
-    DIRECTORY = os.path.join(DIRECTORY, 'cifar-100-python')
-
-
-DATA_URL_CIFAR_10 = 'http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
-DATA_URL_CIFAR_100 = 'http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz'
+from classes import Constants
 
 
 class Utils:
@@ -48,14 +21,14 @@ class Utils:
         """
 
         # Pre-allocate the arrays for the images and class-numbers for efficiency.
-        images = numpy.zeros(shape=[_num_images_train, img_width, img_height, num_channels], dtype=float)
-        cls = numpy.zeros(shape=[_num_images_train], dtype=int)
+        images = numpy.zeros(shape=[Constants.num_images_train, Constants.img_width, Constants.img_height, Constants.num_channels], dtype=float)
+        cls = numpy.zeros(shape=[Constants.num_images_train], dtype=int)
 
         # Begin-index for the current batch.
         begin = 0
 
         # For each data-file.
-        for i in range(_num_files_train):
+        for i in range(Constants.num_train_files):
             # Load the images and class-numbers from the data-file.
             images_batch, cls_batch = Utils._load_data(filename="data_batch_" + str(i + 1))
 
@@ -105,7 +78,7 @@ class Utils:
         raw_float = numpy.array(raw, dtype=float) / 255.0
 
         # Reshape the array to 4-dimensions.
-        images = raw_float.reshape([-1, num_channels, img_width, img_height])
+        images = raw_float.reshape([-1, Constants.num_channels, Constants.img_width, Constants.img_height])
 
         # Reorder the indices of the array.
         images = images.transpose([0, 2, 3, 1])
@@ -120,7 +93,7 @@ class Utils:
         """
 
         # Create full path for the file.
-        filepath = os.path.join(DIRECTORY, filename)
+        filepath = os.path.join(Constants.DIRECTORY, filename)
 
         logging.info("Loading data from: " + filepath)
 
@@ -148,22 +121,22 @@ class Utils:
         Uploads and extracts Cifar-10 data to default folder
         """
 
-        if os.path.isdir(DIRECTORY):
-            logging.info("Found cifar-{} data in {} folder.".format(MODEL, DIRECTORY))
+        if os.path.isdir(Constants.DIRECTORY):
+            logging.info("Found cifar-{} data in {} folder.".format(Constants.MODEL, Constants.DIRECTORY))
             return True
         else:
-            data_url = DATA_URL_CIFAR_10 if MODEL == 10 else DATA_URL_CIFAR_100
+            data_url = Constants.DATA_URL_CIFAR_10 if Constants.MODEL == 10 else Constants.DATA_URL_CIFAR_100
 
             try:
-                os.makedirs(DIRECTORY)
-                logging.info("Directory {} created.".format(DIRECTORY))
+                os.makedirs(Constants.DIRECTORY)
+                logging.info("Directory {} created.".format(Constants.DIRECTORY))
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     return False
 
             filename = data_url.split('/')[-1]
 
-            filepath = os.path.join(DIRECTORY, filename)
+            filepath = os.path.join(Constants.DIRECTORY, filename)
 
             def hook(t):
                 last_b = [0]
@@ -177,12 +150,12 @@ class Utils:
                 return inner
 
             try:
-                logging.info("Dataset uploading to {}".format(DIRECTORY))
+                logging.info("Dataset uploading to {}".format(Constants.DIRECTORY))
 
                 with tqdm.tqdm(unit='B', unit_scale=True, miniters=1, desc=filename) as t:
                     filepath, _ = urllib.request.urlretrieve(data_url, filepath, reporthook=hook(t))
 
-                logging.info("Dataset uploaded to {}".format(DIRECTORY))
+                logging.info("Dataset uploaded to {}".format(Constants.DIRECTORY))
 
                 size = os.stat(filepath).st_size
 
@@ -196,7 +169,7 @@ class Utils:
                 logging.error("Failed to download {}".format(data_url))
                 return False
 
-            tarfile.open(filepath, 'r:gz').extractall(os.path.abspath(os.path.join(DIRECTORY, os.pardir)))
+            tarfile.open(filepath, 'r:gz').extractall(os.path.abspath(os.path.join(Constants.DIRECTORY, os.pardir)))
             os.remove(filepath)
 
             logging.info('Temporary archive deleted..')
