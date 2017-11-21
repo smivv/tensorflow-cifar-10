@@ -46,8 +46,11 @@ class ModelCifar10:
             logging.error("Dataset could not be downloaded..")
             return
 
+        # Data loading from training dataset
+        train_images, train_labels = Utils.load_training_data()
+
         # Data loading from dataset
-        images, labels = Utils.load_training_data()
+        test_images, test_labels = Utils.load_testing_data()
 
         # Correct labels
         y_ = tf.placeholder(tf.float32, [None, self._output_size])

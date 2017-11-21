@@ -18,12 +18,14 @@ img_size_flat = img_width * img_height * num_channels
 num_classes = 10
 
 _num_files_train = 5
+_num_files_test = 1
 
 _images_per_file = 10000
 
 _num_images_train = _num_files_train * _images_per_file
+_num_images_test = _num_files_test * _images_per_file
 
-DIRECTORY = "/Users/vladimirsmirnov/PycharmProjects/python-tensorflow-cifar-10"
+DIRECTORY = "C:\\Users\\Conf\\PycharmProjects\\python-tensorflow-cifar-10\\"
 
 if MODEL == 10:
     DIRECTORY = os.path.join(DIRECTORY, 'cifar-10-batches-py')
@@ -73,6 +75,14 @@ class Utils:
             begin = end
 
         return images, cls
+
+    @staticmethod
+    def load_testing_data():
+        """
+        Load all the testing-data for the CIFAR-10 data-set.
+        """
+
+        return Utils._load_data(filename="test_batch")
 
     @staticmethod
     def _load_data(filename):
@@ -137,6 +147,8 @@ class Utils:
         """
         Uploads and extracts Cifar-10 data to default folder
         """
+
+
 
         if os.path.isdir(DIRECTORY):
             logging.info("Found cifar-{} data in {} folder.".format(MODEL, DIRECTORY))
