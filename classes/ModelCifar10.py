@@ -2,6 +2,7 @@ import tensorflow as tf
 import logging
 
 from classes.Utils import Utils
+from classes import Constants
 
 
 class ModelCifar10:
@@ -53,10 +54,11 @@ class ModelCifar10:
         test_images, test_labels = Utils.load_testing_data()
 
         # Correct labels
-        y_ = tf.placeholder(tf.float32, [None, self._output_size])
+        y_ = tf.placeholder(tf.float32, shape=[None, Constants.num_classes], name='y_true')
+        y_true_cls = tf.argmax(y_, dimension=1)
 
         # Input
-        self.x = tf.placeholder(tf.float32, [None, self._input_size])
+        self.x = tf.placeholder(tf.float32, [None, Constants.img_width, Constants.img_height, Constants.num_channels], name='x')
 
         # Layer 1
         with tf.variable_scope('layer1'):
@@ -74,18 +76,18 @@ class ModelCifar10:
             self.W2 = tf.get_variable('W2', [self._hidden_size, self._output_size], initializer=tf.random_normal_initializer())
             self.b2 = tf.get_variable('b2', [self._output_size, ], initializer=tf.random_normal_initializer())
             # Activation
-            output = tf.nn.softmax(tf.matmul(self.h1, self.W2) + self.b2)
+            y = tf.nn.softmax(tf.matmul(self.h1, self.W2) + self.b2)
 
         logging.info('Second layer build successfull..')
 
         # define the loss function
-        self.cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(output), reduction_indices=[1]))
+        self.cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
 
         logging.info('Loss function initialized..')
 
         # define training step and accuracy
         train_step = tf.train.MomentumOptimizer(learning_rate=0.1, momentum=0.9).minimize(self.cross_entropy)
-        correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(y_, 1))
+        correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         logging.info('Training step and accuracy defined..')
