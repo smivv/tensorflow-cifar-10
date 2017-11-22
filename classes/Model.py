@@ -53,12 +53,10 @@ class Model:
         # Data loading from dataset
         test_images, test_labels, test_labels_onehot = Utils.load_testing_data()
 
-        # Correct labels
-        y_ = tf.placeholder(tf.float32, shape=[None, Constants.num_classes], name='y_true')
-        y_true_cls = tf.argmax(y_, dimension=1)
-
-        # Input
-        self.x = tf.placeholder(tf.float32, [None, Constants.img_width, Constants.img_height, Constants.num_channels], name='x')
+        with tf.name_scope('data'):
+            x = tf.placeholder(tf.float32, shape=[None, Constants.img_width * Constants.img_height * Constants.num_channels], name='Input')
+            y = tf.placeholder(tf.float32, shape=[None, Constants.num_classes], name='Output')
+            x_image = tf.reshape(x, [-1, Constants.img_width, Constants.img_height, Constants.num_channels], name='images')
 
         # Layer 1
         with tf.variable_scope('layer1'):
