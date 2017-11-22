@@ -22,7 +22,7 @@ class Utils:
 
         # Pre-allocate the arrays for the images and class-numbers for efficiency.
         images = numpy.zeros(shape=[Constants.num_images_train, Constants.img_width, Constants.img_height, Constants.num_channels], dtype=float)
-        cls = numpy.zeros(shape=[Constants.num_images_train], dtype=int)
+        labels = numpy.zeros(shape=[Constants.num_images_train], dtype=int)
 
         # Begin-index for the current batch.
         begin = 0
@@ -30,32 +30,38 @@ class Utils:
         # For each data-file.
         for i in range(Constants.num_train_files):
             # Load the images and class-numbers from the data-file.
-            images_batch, cls_batch = Utils._load_data(filename="data_batch_" + str(i + 1))
-
-            # Number of images in this batch.
-            num_images = len(images_batch)
+            images_batch, labels_batch = Utils._load_data(filename="data_batch_" + str(i + 1))
 
             # End-index for the current batch.
-            end = begin + num_images
+            end = begin + len(images_batch)
 
             # Store the images into the array.
             images[begin:end, :] = images_batch
 
             # Store the class-numbers into the array.
-            cls[begin:end] = cls_batch
+            labels[begin:end] = labels_batch
 
             # The begin-index for the next batch is the current end-index.
             begin = end
 
-        return images, cls
+        return images, labels, Utils.dense_to_one_hot(labels)
 
     @staticmethod
     def load_testing_data():
         """
         Load all the testing-data for the CIFAR-10 data-set.
         """
+        images, labels = Utils._load_data(filename="test_batch")
 
-        return Utils._load_data(filename="test_batch")
+        return images, labels, Utils.dense_to_one_hot(labels)
+
+    @staticmethod
+    def dense_to_one_hot(labels):
+        num_labels = labels.shape[0]
+        index_offset = numpy.arange(num_labels) * Constants.num_classes
+        labels_one_hot = numpy.zeros((num_labels, Constants.num_classes))
+        labels_one_hot.flat[index_offset + labels.ravel()] = 1
+        return labels_one_hot
 
     @staticmethod
     def _load_data(filename):
@@ -95,19 +101,19 @@ class Utils:
         # Create full path for the file.
         filepath = os.path.join(Constants.DIRECTORY, filename)
 
-        logging.info("Loading data from: " + filepath)
+        logging.info("Loading data from: %s" % filepath)
 
         with open(filepath, mode='rb') as file:
             # In Python 3.X it is important to set the encoding,
             # otherwise an exception is raised here.
             data = pickle.load(file, encoding='bytes')
 
-        logging.info("Data loaded.")
+        logging.info("Data loaded from: %s" % filepath)
 
         return data
 
     @staticmethod
-    def _get_filenames():
+    def get_classnames():
         """
         Load the names for the classes in the CIFAR-10 data-set.
         Returns a list with the names. Example: names[3] is the name
