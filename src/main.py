@@ -1,12 +1,12 @@
 import argparse
 import logging
-from classes import ModelCifar10
+from classes.Model import Model
 
 logging.basicConfig(level=logging.INFO)
 
 
 def serve(config):
-    model = ModelCifar10.ModelCifar10(config.input_size, config.hidden_size, config.output_size)
+    model = Model(config.input_size, config.hidden_size, config.output_size)
 
 
 def parse_args():

@@ -5,7 +5,7 @@ from classes.Utils import Utils
 from classes import Constants
 
 
-class ModelCifar10:
+class Model:
     """
     A two-layer fully-connected neural network. The net has an input dimension of
     N, a hidden layer dimension of H, and performs classification over C classes.
@@ -48,10 +48,10 @@ class ModelCifar10:
             return
 
         # Data loading from training dataset
-        train_images, train_labels = Utils.load_training_data()
+        train_images, train_labels, train_labels_onehot = Utils.load_training_data()
 
         # Data loading from dataset
-        test_images, test_labels = Utils.load_testing_data()
+        test_images, test_labels, test_labels_onehot = Utils.load_testing_data()
 
         # Correct labels
         y_ = tf.placeholder(tf.float32, shape=[None, Constants.num_classes], name='y_true')
