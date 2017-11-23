@@ -1,26 +1,43 @@
+from classes.Model import Model
+from classes.Utils import Utils
+from classes import Constants
+
+import tensorflow as tf
 import argparse
 import logging
-from classes.Model import Model
+import os
 
 logging.basicConfig(level=logging.INFO)
 
 
 def serve(config):
-    model = Model(config.input_size, config.hidden_size, config.output_size)
+    try:
+        model = Model()
+
+        # Data loading from training dataset
+        train_images, train_labels, train_labels_onehot = Utils.load_training_data()
+
+        # Data loading from dataset
+        # test_images, test_labels, test_labels_onehot = Utils.load_testing_data()
+
+        # Create the Estimator
+        classifier = tf.estimator.Estimator(model_fn=model.run, model_dir=os.path.join(Constants.DIRECTORY, "/tmp/"))
+
+        tensors_to_log = {"probabilities": "softmax_tensor"}
+        logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50)
+
+        # Train the model
+        train_input_fn = tf.estimator.inputs.numpy_input_fn(x={'x': train_images}, y=train_labels, batch_size=100, num_epochs=None, shuffle=True)
+
+        classifier.train(input_fn=train_input_fn, steps=20000, hooks=[logging_hook])
+    except Exception as e:
+        print(e)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--input_size', default='32', help='Input layer size of CNN.')
-
-    logging.info('Input layer size argument passed..')
-
-    parser.add_argument('--hidden_size', default='32', help='Hidden layer size of CNN.')
-
-    logging.info('Hidden layer size argument passed..')
-
-    parser.add_argument('--output_size', default='32', help='Output layer size of CNN.')
+    parser.add_argument('--train', help='Output layer size of CNN.')
 
     logging.info('Output layer size argument passed..')
 

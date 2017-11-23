@@ -22,7 +22,7 @@ class Model:
 
     """--------------------------------------------------------------------------------------------------------------"""
 
-    def __init__(self, input_size, hidden_size, output_size, std=1e-4):
+    def __init__(self):
         """
         Initialize the model. Weights are initialized to small random values and
         biases are initialized to zero. Weights and biases are stored in the
@@ -39,61 +39,82 @@ class Model:
         - output_size: The number of classes C.
         """
 
-        self._input_size = int(input_size)
-        self._hidden_size = int(hidden_size)
-        self._output_size = int(output_size)
-
         if not Utils.download():
             logging.error("Dataset could not be downloaded..")
             return
 
-        # Data loading from training dataset
-        train_images, train_labels, train_labels_onehot = Utils.load_training_data()
+    """--------------------------------------------------------------------------------------------------------------"""
 
-        # Data loading from dataset
-        test_images, test_labels, test_labels_onehot = Utils.load_testing_data()
+    def run(self, features, labels, mode):
 
-        with tf.name_scope('data'):
-            x = tf.placeholder(tf.float32, shape=[None, Constants.img_width * Constants.img_height * Constants.num_channels], name='Input')
-            y = tf.placeholder(tf.float32, shape=[None, Constants.num_classes], name='Output')
-            x_image = tf.reshape(x, [-1, Constants.img_width, Constants.img_height, Constants.num_channels], name='images')
+        try:
+            images = tf.cast(features['x'], tf.float32)
+            # Input Layer
+            with tf.name_scope('Data'):
+                input_layer = tf.reshape(images, [-1, Constants.img_width, Constants.img_height, Constants.num_channels])
 
-        # Layer 1
-        with tf.variable_scope('layer1'):
-            # Hyperparameters
-            self.W1 = tf.get_variable('W1', [self._input_size, self._hidden_size], initializer=tf.random_normal_initializer())
-            self.b1 = tf.get_variable('b1', [self._hidden_size, ], initializer=tf.random_normal_initializer())
-            # Activation
-            self.h1 = tf.nn.relu(tf.matmul(self.x, self.W1) + self.b1)
+            # Convolutional Layer 1
+            with tf.variable_scope('ConvLayer1'):
+                conv1 = tf.layers.conv2d(inputs=input_layer, filters=32, kernel_size=[5, 5], padding="same", activation=tf.nn.relu)
+                pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
 
-        logging.info('First layer build successfull..')
+            logging.info('Convolutional Layer 1 build successfull..')
 
-        # Layer 2
-        with tf.variable_scope('layer2'):
-            # Hyperparameters
-            self.W2 = tf.get_variable('W2', [self._hidden_size, self._output_size], initializer=tf.random_normal_initializer())
-            self.b2 = tf.get_variable('b2', [self._output_size, ], initializer=tf.random_normal_initializer())
-            # Activation
-            y = tf.nn.softmax(tf.matmul(self.h1, self.W2) + self.b2)
+            # Convolutional Layer 1
+            with tf.variable_scope('ConvLayer2'):
+                conv2 = tf.layers.conv2d(inputs=pool1, filters=64, kernel_size=[5, 5], padding="same", activation=tf.nn.relu)
+                pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
 
-        logging.info('Second layer build successfull..')
+            logging.info('Convolutional Layer 2 build successfull..')
 
-        # define the loss function
-        self.cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
+            # Fully Connected Layer
+            with tf.variable_scope('FullyConnectedLayer'):
+                pool2_flat = tf.reshape(pool2, [-1, 8 * 8 * 64])
+                dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
+                dropout = tf.layers.dropout(inputs=dense, rate=0.4, training=(mode == tf.estimator.ModeKeys.TRAIN))
 
-        logging.info('Loss function initialized..')
+            logging.info('Fully Connected Layer build successfull..')
 
-        # define training step and accuracy
-        train_step = tf.train.MomentumOptimizer(learning_rate=0.1, momentum=0.9).minimize(self.cross_entropy)
-        correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+            # Logits Layer
+            logits = tf.layers.dense(inputs=dropout, units=10)
 
-        logging.info('Training step and accuracy defined..')
+            logging.info('Logits Layer build successfull..')
+
+            predictions = {
+                # Generate predictions (for PREDICT and EVAL mode)
+                "classes": tf.argmax(input=logits, axis=1),
+                # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
+                # `logging_hook`.
+                "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
+            }
+
+            if mode == tf.estimator.ModeKeys.PREDICT:
+                return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+
+            # Calculate Loss (for both TRAIN and EVAL modes)
+            onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=10)
+            loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=logits)
+
+            logging.info('Losses build successfull..')
+
+            # Configure the Training Op (for TRAIN mode)
+            if mode == tf.estimator.ModeKeys.TRAIN:
+                optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+                train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
+                return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
+
+            # Add evaluation metrics (for EVAL mode)
+            eval_metric_ops = {"accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])}
+
+            logging.info('Accuracy metric build successfull..')
+
+            return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+        except Exception as e:
+            print(e)
+
 
     """--------------------------------------------------------------------------------------------------------------"""
 
-    def run(self):
-        pass
 
     """--------------------------------------------------------------------------------------------------------------"""
 
