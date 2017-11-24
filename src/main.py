@@ -18,18 +18,21 @@ def serve(config):
         train_images, train_labels, train_labels_onehot = Utils.load_training_data()
 
         # Data loading from dataset
-        # test_images, test_labels, test_labels_onehot = Utils.load_testing_data()
+        test_images, test_labels, test_labels_onehot = Utils.load_testing_data()
 
         # Create the Estimator
-        classifier = tf.estimator.Estimator(model_fn=model.run, model_dir=os.path.join(Constants.DIRECTORY, "/tmp/"))
+        classifier = tf.estimator.Estimator(model_fn=model.train, model_dir=os.path.join(Constants.DIRECTORY, "/tmp/"))
 
-        tensors_to_log = {"probabilities": "softmax_tensor"}
-        logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50)
+        tensors_to_log = {}
+        logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=100)
 
         # Train the model
         train_input_fn = tf.estimator.inputs.numpy_input_fn(x={'x': train_images}, y=train_labels, batch_size=100, num_epochs=None, shuffle=True)
+        test_input_fn = tf.estimator.inputs.numpy_input_fn(x={'x': test_images}, y=test_labels, batch_size=100, num_epochs=None, shuffle=True)
 
-        classifier.train(input_fn=train_input_fn, steps=20000, hooks=[logging_hook])
+        # classifier.train(input_fn=train_input_fn, steps=10000)
+
+        classifier.evaluate(input_fn=test_input_fn, steps=100)
     except Exception as e:
         print(e)
 

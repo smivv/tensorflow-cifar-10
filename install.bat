@@ -4,7 +4,7 @@ python -m venv .env/
 
 :: installation dependencies
 pip install --upgrade tensorflow
-pip install --upgrade numpy
+pip install --upgrade tqdm
 deactivate
 
 :: get CIFAR10 dataset manually

@@ -22,9 +22,9 @@ num_images_test = num_test_files * images_per_file
 DIRECTORY = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if MODEL == 10:
-    DIRECTORY = os.path.join(DIRECTORY, 'cifar-10-batches-py')
+    DATA_DIR = os.path.join(DIRECTORY, 'cifar-10-batches-py')
 else:
-    DIRECTORY = os.path.join(DIRECTORY, 'cifar-100-python')
+    DATA_DIR = os.path.join(DIRECTORY, 'cifar-100-python')
 
 DATA_URL_CIFAR_10 = 'http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
 DATA_URL_CIFAR_100 = 'http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz'

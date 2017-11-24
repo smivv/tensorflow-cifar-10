@@ -99,7 +99,7 @@ class Utils:
         """
 
         # Create full path for the file.
-        filepath = os.path.join(Constants.DIRECTORY, filename)
+        filepath = os.path.join(Constants.DATA_DIR, filename)
 
         logging.info("Loading data from: %s" % filepath)
 
@@ -127,22 +127,22 @@ class Utils:
         Uploads and extracts Cifar-10 data to default folder
         """
 
-        if os.path.isdir(Constants.DIRECTORY):
-            logging.info("Found cifar-{} data in {} folder.".format(Constants.MODEL, Constants.DIRECTORY))
+        if os.path.isdir(Constants.DATA_DIR):
+            logging.info("Found cifar-{} data in {} folder.".format(Constants.MODEL, Constants.DATA_DIR))
             return True
         else:
             data_url = Constants.DATA_URL_CIFAR_10 if Constants.MODEL == 10 else Constants.DATA_URL_CIFAR_100
 
             try:
-                os.makedirs(Constants.DIRECTORY)
-                logging.info("Directory {} created.".format(Constants.DIRECTORY))
+                os.makedirs(Constants.DATA_DIR)
+                logging.info("DATA_DIR {} created.".format(Constants.DATA_DIR))
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     return False
 
             filename = data_url.split('/')[-1]
 
-            filepath = os.path.join(Constants.DIRECTORY, filename)
+            filepath = os.path.join(Constants.DATA_DIR, filename)
 
             def hook(t):
                 last_b = [0]
@@ -156,12 +156,12 @@ class Utils:
                 return inner
 
             try:
-                logging.info("Dataset uploading to {}".format(Constants.DIRECTORY))
+                logging.info("Dataset uploading to {}".format(Constants.DATA_DIR))
 
                 with tqdm.tqdm(unit='B', unit_scale=True, miniters=1, desc=filename) as t:
                     filepath, _ = urllib.request.urlretrieve(data_url, filepath, reporthook=hook(t))
 
-                logging.info("Dataset uploaded to {}".format(Constants.DIRECTORY))
+                logging.info("Dataset uploaded to {}".format(Constants.DATA_DIR))
 
                 size = os.stat(filepath).st_size
 
@@ -175,7 +175,7 @@ class Utils:
                 logging.error("Failed to download {}".format(data_url))
                 return False
 
-            tarfile.open(filepath, 'r:gz').extractall(os.path.abspath(os.path.join(Constants.DIRECTORY, os.pardir)))
+            tarfile.open(filepath, 'r:gz').extractall(os.path.abspath(os.path.join(Constants.DATA_DIR, os.pardir)))
             os.remove(filepath)
 
             logging.info('Temporary archive deleted..')

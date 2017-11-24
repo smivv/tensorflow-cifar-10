@@ -45,7 +45,12 @@ class Model:
 
     """--------------------------------------------------------------------------------------------------------------"""
 
-    def run(self, features, labels, mode):
+    def train(self, features, labels, mode):
+        """
+
+        [INPUT] -> [CONV] -> [POOL] -> [CONV] -> [POOL] -> [FC] ->
+
+        """
 
         try:
             images = tf.cast(features['x'], tf.float32)
