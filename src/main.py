@@ -21,7 +21,7 @@ def serve(config):
         test_images, test_labels, test_labels_onehot = Utils.load_testing_data()
 
         # Create the Estimator
-        classifier = tf.estimator.Estimator(model_fn=model.train, model_dir=os.path.join(Constants.DIRECTORY, "/tmp/"))
+        classifier = tf.estimator.Estimator(model_fn=model.train, model_dir=Constants.LOG_DIR)
 
         tensors_to_log = {}
         logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=100)
@@ -32,6 +32,7 @@ def serve(config):
 
         # classifier.train(input_fn=train_input_fn, steps=10000)
 
+        # classifier.predict(input_fn=test_input_fn)
         classifier.evaluate(input_fn=test_input_fn, steps=100)
     except Exception as e:
         print(e)

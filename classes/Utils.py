@@ -21,8 +21,8 @@ class Utils:
         """
 
         # Pre-allocate the arrays for the images and class-numbers for efficiency.
-        images = numpy.zeros(shape=[Constants.num_images_train, Constants.img_width, Constants.img_height, Constants.num_channels], dtype=float)
-        labels = numpy.zeros(shape=[Constants.num_images_train], dtype=int)
+        images = numpy.zeros(shape=[Constants.num_train_images, Constants.img_width, Constants.img_height, Constants.num_channels], dtype=float)
+        labels = numpy.zeros(shape=[Constants.num_train_images], dtype=int)
 
         # Begin-index for the current batch.
         begin = 0

@@ -16,15 +16,17 @@ num_test_files = 1
 
 images_per_file = 10000
 
-num_images_train = num_train_files * images_per_file
-num_images_test = num_test_files * images_per_file
+num_train_images = num_train_files * images_per_file
+num_test_images = num_test_files * images_per_file
 
-DIRECTORY = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if MODEL == 10:
-    DATA_DIR = os.path.join(DIRECTORY, 'cifar-10-batches-py')
+    DATA_DIR = os.path.join(DIR, 'cifar-10-batches-py')
 else:
-    DATA_DIR = os.path.join(DIRECTORY, 'cifar-100-python')
+    DATA_DIR = os.path.join(DIR, 'cifar-100-python')
+
+LOG_DIR = os.path.join(DIR, 'log')
 
 DATA_URL_CIFAR_10 = 'http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
 DATA_URL_CIFAR_100 = 'http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz'
