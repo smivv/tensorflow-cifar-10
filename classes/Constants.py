@@ -11,6 +11,8 @@ img_size_flat = img_width * img_height * num_channels
 
 num_classes = 10
 
+max_steps = 100
+
 num_train_files = 5
 num_test_files = 1
 

@@ -1,11 +1,14 @@
 import tensorflow as tf
 import logging
+import numpy
 import os
 
 from classes.Utils import Utils
 from classes import Constants
 
 from tensorflow.contrib.tensorboard.plugins import projector
+from tensorflow.examples.tutorials.mnist import input_data
+
 
 class Model:
     """
@@ -47,38 +50,53 @@ class Model:
 
     """--------------------------------------------------------------------------------------------------------------"""
 
-    # def generate_embeddings():
+    def generate_metadata_file(self, labels, labels_onehot):
         # Import data
         # mnist = input_data.read_data_sets(FLAGS.data_dir,
         #                                   one_hot=True,
         #                                   fake_data=FLAGS.fake_data)
-        # sess = tf.InteractiveSession()
-        #
-        # # Input set for Embedded TensorBoard visualization
-        # # Performed with cpu to conserve memory and processing power
+        classnames = Utils.get_classnames()
+
+        def save_metadata(file):
+            with open(file, 'w') as f:
+                #            f.write('id\tchar\n')
+                for i in range(Constants.max_steps):
+                    f.write('{}\n'.format(classnames[labels[i]]))
+
+        # save metadata file
+        save_metadata(Constants.LOG_DIR + '/projector/metadata.tsv')
+
+    """--------------------------------------------------------------------------------------------------------------"""
+
+    def generate_embeddings(self, images):
+        # Import data
+        # mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True, fake_data=FLAGS.fake_data)
+        sess = tf.InteractiveSession()
+
+        # Input set for Embedded TensorBoard visualization
+        # Performed with cpu to conserve memory and processing power
         # with tf.device("/cpu:0"):
-        #     embedding = tf.Variable(tf.stack(mnist.test.images[:FLAGS.max_steps], axis=0), trainable=False,
-        #                             name='embedding')
-        #
-        # tf.global_variables_initializer().run()
-        #
-        # saver = tf.train.Saver()
-        # writer = tf.summary.FileWriter(FLAGS.log_dir + '/projector', sess.graph)
-        #
-        # # Add embedding tensorboard visualization. Need tensorflow version
-        # # >= 0.12.0RC0
-        # config = projector.ProjectorConfig()
-        # embed = config.embeddings.add()
-        # embed.tensor_name = 'embedding:0'
-        # embed.metadata_path = os.path.join(FLAGS.log_dir + '/projector/metadata.tsv')
-        # embed.sprite.image_path = os.path.join(FLAGS.data_dir + '/mnist_10k_sprite.png')
-        #
-        # # Specify the width and height of a single thumbnail.
-        # embed.sprite.single_image_dim.extend([28, 28])
-        # projector.visualize_embeddings(writer, config)
-        #
-        # saver.save(sess, os.path.join(
-        #     FLAGS.log_dir, 'projector/a_model.ckpt'), global_step=FLAGS.max_steps)
+            # embedding = tf.Variable(tf.stack(mnist.test.images[:FLAGS.max_steps], axis=0), trainable=False, name='embedding')
+        embedding = tf.Variable(images[:Constants.num_test_images], trainable=False, name='embedding')
+
+        tf.global_variables_initializer().run()
+
+        saver = tf.train.Saver()
+        writer = tf.summary.FileWriter(Constants.LOG_DIR + '/projector', sess.graph)
+
+        # Add embedding tensorboard visualization. Need tensorflow version
+        # >= 0.12.0RC0
+        config = projector.ProjectorConfig()
+        embed = config.embeddings.add()
+        embed.tensor_name = 'embedding:0'
+        embed.metadata_path = os.path.join(Constants.LOG_DIR + '/projector/metadata.tsv')
+        embed.sprite.image_path = os.path.join(Constants.DATA_DIR + '/cifar_10k_sprite.png')
+
+        # Specify the width and height of a single thumbnail.
+        embed.sprite.single_image_dim.extend([28, 28])
+        projector.visualize_embeddings(writer, config)
+
+        saver.save(sess, os.path.join(Constants.LOG_DIR, 'projector/a_model.ckpt'), global_step=Constants.max_steps)
 
     """--------------------------------------------------------------------------------------------------------------"""
 

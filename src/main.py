@@ -3,6 +3,7 @@ from classes.Utils import Utils
 from classes import Constants
 
 import tensorflow as tf
+import tensorboard as tb
 import argparse
 import logging
 import os
@@ -33,7 +34,10 @@ def serve(config):
         # classifier.train(input_fn=train_input_fn, steps=10000)
 
         # classifier.predict(input_fn=test_input_fn)
-        classifier.evaluate(input_fn=test_input_fn, steps=100)
+        # classifier.evaluate(input_fn=test_input_fn, steps=100)
+        model.generate_metadata_file(test_labels, test_labels_onehot)
+        model.generate_embeddings(test_images)
+
     except Exception as e:
         print(e)
 
