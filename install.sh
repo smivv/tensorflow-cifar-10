@@ -6,7 +6,9 @@ source .env/bin/activate
 
 # installation dependencies
 pip install tensorflow
+pip install tensorboard
 pip install tqdm
+pip install --ignore-installed --upgrade tensorflow-1.4.0-cp36-cp36m-macosx_10_12_x86_64.whl
 deactivate
 
 # get CIFAR10 dataset, now it's ambiguous

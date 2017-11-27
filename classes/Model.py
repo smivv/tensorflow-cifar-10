@@ -4,7 +4,9 @@ import numpy
 import os
 
 from classes.Utils import Utils
-from classes import Constants
+from classes.Constants import DATA_DIR, LOG_DIR, \
+    num_channels, num_classes, num_test_images, \
+    img_width, img_height, max_steps
 
 from tensorflow.contrib.tensorboard.plugins import projector
 from tensorflow.examples.tutorials.mnist import input_data
@@ -51,20 +53,16 @@ class Model:
     """--------------------------------------------------------------------------------------------------------------"""
 
     def generate_metadata_file(self, labels, labels_onehot):
-        # Import data
-        # mnist = input_data.read_data_sets(FLAGS.data_dir,
-        #                                   one_hot=True,
-        #                                   fake_data=FLAGS.fake_data)
+
         classnames = Utils.get_classnames()
 
-        def save_metadata(file):
-            with open(file, 'w') as f:
-                #            f.write('id\tchar\n')
-                for i in range(Constants.max_steps):
-                    f.write('{}\n'.format(classnames[labels[i]]))
+        metadata_file = open(os.path.join(LOG_DIR, 'metadata.tsv'), 'w')
+        metadata_file.write('Name\tClass\n')
 
-        # save metadata file
-        save_metadata(Constants.LOG_DIR + '/projector/metadata.tsv')
+        for i in range(max_steps):
+            metadata_file.write('%06d\t%s\n' % (i, classnames[labels[i]]))
+
+        metadata_file.close()
 
     """--------------------------------------------------------------------------------------------------------------"""
 
@@ -75,28 +73,26 @@ class Model:
 
         # Input set for Embedded TensorBoard visualization
         # Performed with cpu to conserve memory and processing power
-        # with tf.device("/cpu:0"):
-            # embedding = tf.Variable(tf.stack(mnist.test.images[:FLAGS.max_steps], axis=0), trainable=False, name='embedding')
-        embedding = tf.Variable(images[:Constants.num_test_images], trainable=False, name='embedding')
+        with tf.device("/cpu:0"):
+            embedding = tf.Variable(images[:num_test_images], trainable=False, name='embedding')
 
-        tf.global_variables_initializer().run()
+        sess.run(embedding.initializer)
 
-        saver = tf.train.Saver()
-        writer = tf.summary.FileWriter(Constants.LOG_DIR + '/projector', sess.graph)
+        writer = tf.summary.FileWriter(LOG_DIR + '/projector', sess.graph)
 
         # Add embedding tensorboard visualization. Need tensorflow version
         # >= 0.12.0RC0
         config = projector.ProjectorConfig()
         embed = config.embeddings.add()
-        embed.tensor_name = 'embedding:0'
-        embed.metadata_path = os.path.join(Constants.LOG_DIR + '/projector/metadata.tsv')
-        embed.sprite.image_path = os.path.join(Constants.DATA_DIR + '/cifar_10k_sprite.png')
+        embed.tensor_name = embedding.name
+        embed.metadata_path = os.path.join(LOG_DIR + '/projector/metadata.tsv')
+        # embed.sprite.image_path = os.path.join(DATA_DIR + '/cifar_10k_sprite.png')
+        embed.sprite.single_image_dim.extend([img_width, img_height])
 
-        # Specify the width and height of a single thumbnail.
-        embed.sprite.single_image_dim.extend([28, 28])
         projector.visualize_embeddings(writer, config)
 
-        saver.save(sess, os.path.join(Constants.LOG_DIR, 'projector/a_model.ckpt'), global_step=Constants.max_steps)
+        saver = tf.train.Saver([embedding])
+        saver.save(sess, os.path.join(LOG_DIR, 'projector/a_model.ckpt'), global_step=max_steps)
 
     """--------------------------------------------------------------------------------------------------------------"""
 
@@ -111,21 +107,21 @@ class Model:
             images = tf.cast(features['x'], tf.float32)
             # Input Layer
             with tf.name_scope('Data'):
-                input_layer = tf.reshape(images, [-1, Constants.img_width, Constants.img_height, Constants.num_channels])
+                input_layer = tf.reshape(images, [-1, img_width, img_height, num_channels])
 
             # Convolutional Layer 1
             with tf.variable_scope('ConvLayer1'):
                 conv1 = tf.layers.conv2d(inputs=input_layer, filters=32, kernel_size=[5, 5], padding="same", activation=tf.nn.relu)
                 pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
 
-            logging.info('Convolutional Layer 1 build successfull..')
+            logging.info('Convolutional Layer 1 build successful..')
 
             # Convolutional Layer 1
             with tf.variable_scope('ConvLayer2'):
                 conv2 = tf.layers.conv2d(inputs=pool1, filters=64, kernel_size=[5, 5], padding="same", activation=tf.nn.relu)
                 pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
 
-            logging.info('Convolutional Layer 2 build successfull..')
+            logging.info('Convolutional Layer 2 build successful..')
 
             # Fully Connected Layer
             with tf.variable_scope('FullyConnectedLayer'):
@@ -133,12 +129,12 @@ class Model:
                 dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
                 dropout = tf.layers.dropout(inputs=dense, rate=0.4, training=(mode == tf.estimator.ModeKeys.TRAIN))
 
-            logging.info('Fully Connected Layer build successfull..')
+            logging.info('Fully Connected Layer build successful..')
 
             # Logits Layer
             logits = tf.layers.dense(inputs=dropout, units=10)
 
-            logging.info('Logits Layer build successfull..')
+            logging.info('Logits Layer build successful..')
 
             predictions = {
                 # Generate predictions (for PREDICT and EVAL mode)
@@ -155,7 +151,7 @@ class Model:
             onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=10)
             loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=logits)
 
-            logging.info('Losses build successfull..')
+            logging.info('Losses build successful..')
 
             # Configure the Training Op (for TRAIN mode)
             if mode == tf.estimator.ModeKeys.TRAIN:
@@ -166,7 +162,7 @@ class Model:
             # Add evaluation metrics (for EVAL mode)
             eval_metric_ops = {"accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])}
 
-            logging.info('Accuracy metric build successfull..')
+            logging.info('Accuracy metric build successful..')
 
             return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
         except Exception as e:
