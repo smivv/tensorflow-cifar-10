@@ -24,19 +24,19 @@ def serve(config):
         # Create the Estimator
         classifier = tf.estimator.Estimator(model_fn=model.train, model_dir=Constants.LOG_DIR)
 
-        tensors_to_log = {}
-        logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=100)
+        # tensors_to_log = {}
+        # logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=100)
 
         # Train the model
         train_input_fn = tf.estimator.inputs.numpy_input_fn(x={'x': train_images}, y=train_labels, batch_size=100, num_epochs=None, shuffle=True)
         test_input_fn = tf.estimator.inputs.numpy_input_fn(x={'x': test_images}, y=test_labels, batch_size=100, num_epochs=None, shuffle=True)
 
-        # classifier.train(input_fn=train_input_fn, steps=10000)
+        classifier.train(input_fn=train_input_fn, steps=500)
 
         # classifier.predict(input_fn=test_input_fn)
         # classifier.evaluate(input_fn=test_input_fn, steps=100)
-        model.generate_metadata_file(test_labels, test_labels_onehot)
-        model.generate_embeddings(test_images)
+        # model.generate_metadata_file(test_labels, test_labels_onehot)
+        # model.generate_embeddings(test_images)
 
     except Exception as e:
         print(e)

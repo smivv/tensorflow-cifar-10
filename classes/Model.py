@@ -105,6 +105,7 @@ class Model:
 
         try:
             images = tf.cast(features['x'], tf.float32)
+            images_int32 = tf.cast(features['x'], tf.int32)
             # Input Layer
             with tf.name_scope('Data'):
                 input_layer = tf.reshape(images, [-1, img_width, img_height, num_channels])
@@ -131,10 +132,45 @@ class Model:
 
             logging.info('Fully Connected Layer build successful..')
 
+
+
+            EMBEDDING_SIZE = 3
+
+            # Convert indexes of words into embeddings.
+            # This creates embeddings matrix of [n_words, EMBEDDING_SIZE] and then
+            # maps word indexes of the sequence into [batch_size, sequence_length,
+            # EMBEDDING_SIZE].
+            word_vectors = tf.contrib.layers.embed_sequence(
+                tf.cast(dropout, tf.int32), vocab_size=num_classes, embed_dim=EMBEDDING_SIZE)
+
+            # # Split into list of embedding per word, while removing doc length dim.
+            # # word_list results to be a list of tensors [batch_size, EMBEDDING_SIZE].
+            # word_list = tf.unstack(word_vectors, axis=1)
+            #
+            # # Create a Gated Recurrent Unit cell with hidden size of EMBEDDING_SIZE.
+            # cell = tf.nn.rnn_cell.GRUCell(EMBEDDING_SIZE)
+            #
+            # # Create an unrolled Recurrent Neural Networks to length of
+            # # MAX_DOCUMENT_LENGTH and passes word_list as inputs for each unit.
+            # _, encoding = tf.nn.static_rnn(cell, word_list, dtype=tf.float32)
+            #
+            # # Given encoding of RNN, take encoding of last step (e.g hidden size of the
+            # # neural network of last step) and pass it as features for softmax
+            # # classification over output classes.
+
+
+
+
             # Logits Layer
             logits = tf.layers.dense(inputs=dropout, units=10)
 
             logging.info('Logits Layer build successful..')
+
+
+
+            # embed_ph = tf.placeholder(shape=[vocab_size, embedding_size], dtype=tf.float32)
+            #
+            # embeddings = tf.Variable(embed_ph)
 
             predictions = {
                 # Generate predictions (for PREDICT and EVAL mode)
@@ -164,7 +200,9 @@ class Model:
 
             logging.info('Accuracy metric build successful..')
 
-            return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+            return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops,
+                                              # scaffold=tf.train.Scaffold(init_feed_dict={embed_ph: my_embedding_numpy_array})
+                                              )
         except Exception as e:
             print(e)
 
