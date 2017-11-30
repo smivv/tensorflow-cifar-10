@@ -3,6 +3,8 @@ import os
 
 MODEL = 10
 
+start_learning_rate = 0.001
+
 img_width = 32
 img_height = 32
 num_channels = 3
@@ -12,6 +14,7 @@ img_size_flat = img_width * img_height * num_channels
 num_classes = 10
 
 max_steps = 100
+batch_size = 100
 
 num_train_files = 5
 num_test_files = 1
@@ -28,7 +31,7 @@ if MODEL == 10:
 else:
     DATA_DIR = os.path.join(DIR, 'cifar-100-python')
 
-LOG_DIR = os.path.join(DIR, 'log/1')
+LOG_DIR = os.path.join(DIR, 'log/1/')
 
 DATA_URL_CIFAR_10 = 'http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
 DATA_URL_CIFAR_100 = 'http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz'

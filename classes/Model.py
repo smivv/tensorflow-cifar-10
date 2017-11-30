@@ -6,7 +6,7 @@ import os
 from classes.Utils import Utils
 from classes.Constants import DATA_DIR, LOG_DIR, \
     num_channels, num_classes, num_test_images, \
-    img_width, img_height, max_steps
+    img_width, img_height, max_steps, start_learning_rate, batch_size
 
 from tensorflow.contrib.tensorboard.plugins import projector
 from tensorflow.examples.tutorials.mnist import input_data
@@ -52,60 +52,61 @@ class Model:
 
     """--------------------------------------------------------------------------------------------------------------"""
 
-    def generate_metadata_file(self, labels, labels_onehot):
-
-        classnames = Utils.get_classnames()
-
-        metadata_file = open(os.path.join(LOG_DIR, 'metadata.tsv'), 'w')
-        metadata_file.write('Name\tClass\n')
-
-        for i in range(max_steps):
-            metadata_file.write('%06d\t%s\n' % (i, classnames[labels[i]]))
-
-        metadata_file.close()
-
-    """--------------------------------------------------------------------------------------------------------------"""
-
-    def generate_embeddings(self, images):
-        # Import data
-        # mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True, fake_data=FLAGS.fake_data)
-        sess = tf.InteractiveSession()
-
-        # Input set for Embedded TensorBoard visualization
-        # Performed with cpu to conserve memory and processing power
-        with tf.device("/cpu:0"):
-            embedding = tf.Variable(images[:num_test_images], trainable=False, name='embedding')
-
-        sess.run(embedding.initializer)
-
-        writer = tf.summary.FileWriter(LOG_DIR + '/projector', sess.graph)
-
-        # Add embedding tensorboard visualization. Need tensorflow version
-        # >= 0.12.0RC0
-        config = projector.ProjectorConfig()
-        embed = config.embeddings.add()
-        embed.tensor_name = embedding.name
-        embed.metadata_path = os.path.join(LOG_DIR + '/projector/metadata.tsv')
-        # embed.sprite.image_path = os.path.join(DATA_DIR + '/cifar_10k_sprite.png')
-        embed.sprite.single_image_dim.extend([img_width, img_height])
-
-        projector.visualize_embeddings(writer, config)
-
-        saver = tf.train.Saver([embedding])
-        saver.save(sess, os.path.join(LOG_DIR, 'projector/a_model.ckpt'), global_step=max_steps)
+    # def generate_metadata_file(self, labels, labels_onehot):
+    #
+    #     classnames = Utils.get_classnames()
+    #
+    #     metadata_file = open(os.path.join(LOG_DIR, 'metadata.tsv'), 'w')
+    #     metadata_file.write('Name\tClass\n')
+    #
+    #     for i in range(max_steps):
+    #         metadata_file.write('%06d\t%s\n' % (i, classnames[labels[i]]))
+    #
+    #     metadata_file.close()
 
     """--------------------------------------------------------------------------------------------------------------"""
 
-    def train(self, features, labels, mode):
+    # def generate_embeddings(self, images):
+    #     # Import data
+    #     # mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True, fake_data=FLAGS.fake_data)
+    #     sess = tf.InteractiveSession()
+    #
+    #     # Input set for Embedded TensorBoard visualization
+    #     # Performed with cpu to conserve memory and processing power
+    #     with tf.device("/cpu:0"):
+    #         embedding = tf.Variable(images[:num_test_images], trainable=False, name='embedding')
+    #
+    #     sess.run(embedding.initializer)
+    #
+    #     writer = tf.summary.FileWriter(LOG_DIR + '/projector', sess.graph)
+    #
+    #     # Add embedding tensorboard visualization. Need tensorflow version
+    #     # >= 0.12.0RC0
+    #     config = projector.ProjectorConfig()
+    #     embed = config.embeddings.add()
+    #     embed.tensor_name = embedding.name
+    #     embed.metadata_path = os.path.join(LOG_DIR + '/projector/metadata.tsv')
+    #     # embed.sprite.image_path = os.path.join(DATA_DIR + '/cifar_10k_sprite.png')
+    #     embed.sprite.single_image_dim.extend([img_width, img_height])
+    #
+    #     projector.visualize_embeddings(writer, config)
+    #
+    #     saver = tf.train.Saver([embedding])
+    #     saver.save(sess, os.path.join(LOG_DIR, 'projector/a_model.ckpt'), global_step=max_steps)
+
+    """--------------------------------------------------------------------------------------------------------------"""
+
+    def inference(self, features, labels, mode):
         """
 
-        [INPUT] -> [CONV] -> [POOL] -> [CONV] -> [POOL] -> [FC] ->
+        1) [INPUT] -> [CONV] -> [POOL] -> [CONV] -> [POOL] -> [FC] -> [DROPOUT] -> [LOGITS]
+
+        2) [INPUT] -> [CONV] -> [POOL] -> [CONV] -> [POOL] -> [FC] -> [DROPOUT] -> [FC] -> [l2_normalized] -> [LOGITS]
 
         """
 
         try:
             images = tf.cast(features['x'], tf.float32)
-            images_int32 = tf.cast(features['x'], tf.int32)
             # Input Layer
             with tf.name_scope('Data'):
                 input_layer = tf.reshape(images, [-1, img_width, img_height, num_channels])
@@ -132,45 +133,37 @@ class Model:
 
             logging.info('Fully Connected Layer build successful..')
 
+            tf.summary.histogram('dropout', dropout)
 
+            """ ---------------------------------------------------------------------------------------------------- """
+            # sess = tf.InteractiveSession()
 
-            EMBEDDING_SIZE = 3
+            # embedding = tf.Variable(dropout, name='embedding')
 
-            # Convert indexes of words into embeddings.
-            # This creates embeddings matrix of [n_words, EMBEDDING_SIZE] and then
-            # maps word indexes of the sequence into [batch_size, sequence_length,
-            # EMBEDDING_SIZE].
-            word_vectors = tf.contrib.layers.embed_sequence(
-                tf.cast(dropout, tf.int32), vocab_size=num_classes, embed_dim=EMBEDDING_SIZE)
-
-            # # Split into list of embedding per word, while removing doc length dim.
-            # # word_list results to be a list of tensors [batch_size, EMBEDDING_SIZE].
-            # word_list = tf.unstack(word_vectors, axis=1)
+            # saver = tf.train.Saver([embedding])
             #
-            # # Create a Gated Recurrent Unit cell with hidden size of EMBEDDING_SIZE.
-            # cell = tf.nn.rnn_cell.GRUCell(EMBEDDING_SIZE)
+            # sess.run(embedding.initializer)
             #
-            # # Create an unrolled Recurrent Neural Networks to length of
-            # # MAX_DOCUMENT_LENGTH and passes word_list as inputs for each unit.
-            # _, encoding = tf.nn.static_rnn(cell, word_list, dtype=tf.float32)
+            # saver.save(sess, os.path.join(LOG_DIR, 'filename.ckpt'))
+            # tf.concat([tf.cast(features['data'], tf.float32), dropout], 0)
+
+            """ ---------------------------------------------------------------------------------------------------- """
+
+            # EMBEDDING_SIZE = 3
             #
-            # # Given encoding of RNN, take encoding of last step (e.g hidden size of the
-            # # neural network of last step) and pass it as features for softmax
-            # # classification over output classes.
+            # dense = tf.layers.dense(inputs=dropout, units=EMBEDDING_SIZE, activation=tf.nn.relu, use_bias=False)
+            # l2_normalized = tf.nn.l2_normalize(dense, dim=1)
+            #
+            # tf.summary.histogram("l2_normilized", dropout)
 
-
-
+            """ ---------------------------------------------------------------------------------------------------- """
 
             # Logits Layer
             logits = tf.layers.dense(inputs=dropout, units=10)
 
+            tf.summary.histogram('logits', logits)
+
             logging.info('Logits Layer build successful..')
-
-
-
-            # embed_ph = tf.placeholder(shape=[vocab_size, embedding_size], dtype=tf.float32)
-            #
-            # embeddings = tf.Variable(embed_ph)
 
             predictions = {
                 # Generate predictions (for PREDICT and EVAL mode)
@@ -181,34 +174,41 @@ class Model:
             }
 
             if mode == tf.estimator.ModeKeys.PREDICT:
-                return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+                return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, evaluation_hooks=[])
 
             # Calculate Loss (for both TRAIN and EVAL modes)
             onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=10)
             loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=logits)
 
+            tf.summary.histogram('loss', loss)
+
             logging.info('Losses build successful..')
 
             # Configure the Training Op (for TRAIN mode)
             if mode == tf.estimator.ModeKeys.TRAIN:
-                optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+                learning_rate = tf.train.exponential_decay(start_learning_rate, tf.train.get_global_step(), 1000, 0.9, staircase=True)
+                optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
                 train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
-                return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
+                return tf.estimator.EstimatorSpec(mode=mode, loss=loss,
+                                                  train_op=train_op,
+                                                  scaffold=tf.train.Scaffold(
+                                                      summary_op=tf.summary.merge_all(),
+                                                  ))
 
             # Add evaluation metrics (for EVAL mode)
-            eval_metric_ops = {"accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])}
+            accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
+
+            tf.summary.histogram('accuracy', accuracy)
 
             logging.info('Accuracy metric build successful..')
 
-            return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops,
-                                              # scaffold=tf.train.Scaffold(init_feed_dict={embed_ph: my_embedding_numpy_array})
-                                              )
+            return tf.estimator.EstimatorSpec(mode=mode, loss=loss,
+                                              eval_metric_ops={"accuracy": accuracy},
+                                              scaffold=tf.train.Scaffold(
+                                                  summary_op=tf.summary.merge_all(),
+                                              ))
         except Exception as e:
             print(e)
 
-
-    """--------------------------------------------------------------------------------------------------------------"""
-
-
-    """--------------------------------------------------------------------------------------------------------------"""
+    """ ------------------------------------------------------------------------------------------------------------ """
 
