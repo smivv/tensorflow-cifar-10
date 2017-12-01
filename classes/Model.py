@@ -6,7 +6,7 @@ import os
 from classes.Utils import Utils
 from classes.Constants import DATA_DIR, LOG_DIR, \
     num_channels, num_classes, num_test_images, \
-    img_width, img_height, max_steps, start_learning_rate, batch_size
+    img_width, img_height, max_steps, start_learning_rate, batch_size, EMBEDDING_SIZE
 
 from tensorflow.contrib.tensorboard.plugins import projector
 from tensorflow.examples.tutorials.mnist import input_data
@@ -149,17 +149,18 @@ class Model:
 
             """ ---------------------------------------------------------------------------------------------------- """
 
-            EMBEDDING_SIZE = 3
+            l2_normalized = tf.nn.l2_normalize(dropout, dim=1, name='l2_normalized')
 
-            # dense = tf.layers.dense(inputs=dropout, units=EMBEDDING_SIZE, activation=tf.nn.relu, use_bias=False)
-            l2_normalized = tf.nn.l2_normalize(dropout, dim=1, name='l2_normilized')
+            tf.summary.histogram("l2_normalized", l2_normalized)
 
-            tf.summary.histogram("l2_normilized", l2_normalized)
+            dense3 = tf.layers.dense(inputs=l2_normalized, units=EMBEDDING_SIZE, activation=tf.nn.relu, name='dense3')
+
+            tf.summary.histogram("dense3", dense3)
 
             """ ---------------------------------------------------------------------------------------------------- """
 
             # Logits Layer
-            logits = tf.layers.dense(inputs=dropout, units=10)
+            logits = tf.layers.dense(inputs=dense3, units=10)
 
             tf.summary.histogram('logits', logits)
 
@@ -187,7 +188,7 @@ class Model:
 
             # Configure the Training Op (for TRAIN mode)
             if mode == tf.estimator.ModeKeys.TRAIN:
-                learning_rate = tf.train.exponential_decay(start_learning_rate, tf.train.get_global_step(), 1000, 0.9, staircase=True)
+                learning_rate = tf.train.exponential_decay(start_learning_rate, tf.train.get_global_step(), 1000, 0.75, staircase=True)
                 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
                 train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
                 return tf.estimator.EstimatorSpec(mode=mode, loss=loss,

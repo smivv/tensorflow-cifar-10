@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
     logging.info('Evaluate argument passed..')
 
-    parser.add_argument('--steps', default=1000, help='Number of steps.')
+    parser.add_argument('--steps', default=10000, help='Number of steps.')
 
     logging.info('Steps argument passed..')
 

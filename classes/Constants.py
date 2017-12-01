@@ -3,6 +3,8 @@ import os
 
 MODEL = 10
 
+EMBEDDING_SIZE = 3
+
 start_learning_rate = 0.001
 
 img_width = 32
