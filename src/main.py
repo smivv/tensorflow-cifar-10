@@ -42,7 +42,7 @@ def serve(args):
                 # saver hook
                 EmbeddingSaverHook(data, labels)
                 # summary hook
-                # tf.train.SummarySaverHook(save_secs=2, output_dir=Constants.LOG_DIR,
+                # tf.train.SummarySaverHook(save_secs=2, output_dir=LOG_DIR,
                 #                           scaffold=tf.train.Scaffold(
                 #                               summary_op=tf.summary.merge_all()
                 #                           ))

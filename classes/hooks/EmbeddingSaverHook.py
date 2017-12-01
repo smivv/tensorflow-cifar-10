@@ -14,8 +14,10 @@ class EmbeddingSaverHook(tf.train.SessionRunHook):
     def __init__(self, data, labels):
         self._data = data
         self._labels = labels
+        self._saver = None
 
     def begin(self):
+        self._saver = tf.train.Saver([tf.get_variable("dropout", [100, 1024])])
         pass
 
     def before_run(self, run_context):
@@ -26,11 +28,11 @@ class EmbeddingSaverHook(tf.train.SessionRunHook):
 
     def end(self, session):
 
-        writer = tf.summary.FileWriter(LOG_DIR + 'projector')
+        writer = tf.summary.FileWriter(os.path.join(LOG_DIR, 'projector'), session.graph)
 
         config = projector.ProjectorConfig()
         embed = config.embeddings.add()
-        embed.tensor_name = 'embedding'
+        embed.tensor_name = 'dropout'
 
         embed.metadata_path = os.path.join(LOG_DIR + 'projector/metadata.tsv')
 
@@ -39,15 +41,14 @@ class EmbeddingSaverHook(tf.train.SessionRunHook):
 
         projector.visualize_embeddings(writer, config)
 
-        saver = tf.train.Saver()
-        saver.save(session, os.path.join(LOG_DIR, "model.ckpt"))
+        self._saver.save(session, os.path.join(LOG_DIR, "projector/model.ckpt"))
 
         pass
 
     def generate_metadata_file(self):
         classnames = Utils.get_classnames()
 
-        metadata_file = open(os.path.join(LOG_DIR, '/projector/metadata.tsv'), 'w')
+        metadata_file = open(os.path.join(LOG_DIR, '/metadata.tsv'), 'w')
         # metadata_file.write('Name\tClass\n')
 
         for i in range(len(self._labels)):

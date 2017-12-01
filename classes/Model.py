@@ -129,7 +129,7 @@ class Model:
             with tf.variable_scope('FullyConnectedLayer'):
                 pool2_flat = tf.reshape(pool2, [-1, 8 * 8 * 64])
                 dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
-                dropout = tf.layers.dropout(inputs=dense, rate=0.4, training=(mode == tf.estimator.ModeKeys.TRAIN))
+                dropout = tf.layers.dropout(inputs=dense, rate=0.4, training=(mode == tf.estimator.ModeKeys.TRAIN), name='dropout')
 
             logging.info('Fully Connected Layer build successful..')
 
@@ -138,7 +138,7 @@ class Model:
             """ ---------------------------------------------------------------------------------------------------- """
             # sess = tf.InteractiveSession()
 
-            # embedding = tf.Variable(dropout, name='embedding')
+            # embedding = tf.Variable(dropout, name='embedding', trainable=False)
 
             # saver = tf.train.Saver([embedding])
             #
@@ -149,12 +149,12 @@ class Model:
 
             """ ---------------------------------------------------------------------------------------------------- """
 
-            # EMBEDDING_SIZE = 3
-            #
+            EMBEDDING_SIZE = 3
+
             # dense = tf.layers.dense(inputs=dropout, units=EMBEDDING_SIZE, activation=tf.nn.relu, use_bias=False)
-            # l2_normalized = tf.nn.l2_normalize(dense, dim=1)
-            #
-            # tf.summary.histogram("l2_normilized", dropout)
+            l2_normalized = tf.nn.l2_normalize(dropout, dim=1, name='l2_normilized')
+
+            tf.summary.histogram("l2_normilized", l2_normalized)
 
             """ ---------------------------------------------------------------------------------------------------- """
 
@@ -177,6 +177,7 @@ class Model:
                 return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, evaluation_hooks=[])
 
             # Calculate Loss (for both TRAIN and EVAL modes)
+            labels = tf.identity(labels, name='labels')
             onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=10)
             loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=logits)
 
