@@ -78,7 +78,7 @@ class Utils:
         raw = data[b'data']
 
         # Get the class-numbers for each image. Convert to numpy-array.
-        cls = numpy.array(data[b'labels'])
+        labels = numpy.array(data[b'labels'])
 
         # Convert the raw images from the data-files to floating-points.
         raw_float = numpy.array(raw, dtype=float) / 255.0
@@ -89,7 +89,7 @@ class Utils:
         # Reorder the indices of the array.
         images = images.transpose([0, 2, 3, 1])
 
-        return images, cls
+        return images, labels
 
     @staticmethod
     def _unpickle(filename):

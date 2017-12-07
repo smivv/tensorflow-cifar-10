@@ -5,7 +5,8 @@ MODEL = 10
 
 EMBEDDING_SIZE = 3
 
-start_learning_rate = 0.001
+# start_learning_rate = 0.001
+start_learning_rate = 0.0005
 
 img_width = 32
 img_height = 32

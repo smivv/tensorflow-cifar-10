@@ -52,100 +52,52 @@ class Model:
 
     """--------------------------------------------------------------------------------------------------------------"""
 
-    # def generate_metadata_file(self, labels, labels_onehot):
-    #
-    #     classnames = Utils.get_classnames()
-    #
-    #     metadata_file = open(os.path.join(LOG_DIR, 'metadata.tsv'), 'w')
-    #     metadata_file.write('Name\tClass\n')
-    #
-    #     for i in range(max_steps):
-    #         metadata_file.write('%06d\t%s\n' % (i, classnames[labels[i]]))
-    #
-    #     metadata_file.close()
-
-    """--------------------------------------------------------------------------------------------------------------"""
-
-    # def generate_embeddings(self, images):
-    #     # Import data
-    #     # mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True, fake_data=FLAGS.fake_data)
-    #     sess = tf.InteractiveSession()
-    #
-    #     # Input set for Embedded TensorBoard visualization
-    #     # Performed with cpu to conserve memory and processing power
-    #     with tf.device("/cpu:0"):
-    #         embedding = tf.Variable(images[:num_test_images], trainable=False, name='embedding')
-    #
-    #     sess.run(embedding.initializer)
-    #
-    #     writer = tf.summary.FileWriter(LOG_DIR + '/projector', sess.graph)
-    #
-    #     # Add embedding tensorboard visualization. Need tensorflow version
-    #     # >= 0.12.0RC0
-    #     config = projector.ProjectorConfig()
-    #     embed = config.embeddings.add()
-    #     embed.tensor_name = embedding.name
-    #     embed.metadata_path = os.path.join(LOG_DIR + '/projector/metadata.tsv')
-    #     # embed.sprite.image_path = os.path.join(DATA_DIR + '/cifar_10k_sprite.png')
-    #     embed.sprite.single_image_dim.extend([img_width, img_height])
-    #
-    #     projector.visualize_embeddings(writer, config)
-    #
-    #     saver = tf.train.Saver([embedding])
-    #     saver.save(sess, os.path.join(LOG_DIR, 'projector/a_model.ckpt'), global_step=max_steps)
-
-    """--------------------------------------------------------------------------------------------------------------"""
-
     def inference(self, features, labels, mode, params):
-        """
-
-        1) [INPUT] -> [CONV] -> [POOL] -> [CONV] -> [POOL] -> [FC] -> [DROPOUT] -> [LOGITS]
-
-        2) [INPUT] -> [CONV] -> [POOL] -> [CONV] -> [POOL] -> [FC] -> [DROPOUT] -> [FC] -> [l2_normalized] -> [LOGITS]
-
-        """
-
         try:
             images = tf.cast(features['x'], tf.float32)
+
             # Input Layer
             with tf.name_scope('Data'):
                 input_layer = tf.reshape(images, [-1, img_width, img_height, num_channels])
 
             # Convolutional Layer 1
             with tf.variable_scope('ConvLayer1'):
-                conv1 = tf.layers.conv2d(inputs=input_layer, filters=32, kernel_size=[5, 5], padding="same", activation=tf.nn.relu)
-                pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
+                conv1 = tf.layers.conv2d(inputs=input_layer, filters=32, kernel_size=[3, 3], padding="same", activation=tf.nn.elu)
+                pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=1)
 
             logging.info('Convolutional Layer 1 build successful..')
 
-            # Convolutional Layer 1
+            # Convolutional Layer 2
             with tf.variable_scope('ConvLayer2'):
-                conv2 = tf.layers.conv2d(inputs=pool1, filters=64, kernel_size=[5, 5], padding="same", activation=tf.nn.relu)
-                pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+                conv2 = tf.layers.conv2d(inputs=pool1, filters=64, kernel_size=[3, 3], padding="same", activation=tf.nn.elu)
+                pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=1)
 
             logging.info('Convolutional Layer 2 build successful..')
 
+            # Convolutional Layer 3
+            with tf.variable_scope('ConvLayer3'):
+                conv3 = tf.layers.conv2d(inputs=pool2, filters=128, kernel_size=[3, 3], padding="same", activation=tf.nn.elu)
+                pool3 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[2, 2], strides=2)
+
+            logging.info('Convolutional Layer 3 build successful..')
+
+            # Convolutional Layer 4
+            with tf.variable_scope('ConvLayer4'):
+                conv4 = tf.layers.conv2d(inputs=pool3, filters=256, kernel_size=[3, 3], padding="same",
+                                         activation=tf.nn.elu)
+                pool4 = tf.layers.max_pooling2d(inputs=conv4, pool_size=[2, 2], strides=2)
+
+            logging.info('Convolutional Layer 4 build successful..')
+
             # Fully Connected Layer
             with tf.variable_scope('FullyConnectedLayer'):
-                pool2_flat = tf.reshape(pool2, [-1, 8 * 8 * 64])
-                dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
+                pool2_flat = tf.reshape(pool4, [-1, 7 * 7 * 256])
+                dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.elu)
                 # dropout = tf.layers.dropout(inputs=dense, rate=0.4, training=(mode == tf.estimator.ModeKeys.TRAIN))
 
             logging.info('Fully Connected Layer build successful..')
 
             # tf.summary.histogram('dropout', dropout)
-
-            """ ---------------------------------------------------------------------------------------------------- """
-            # sess = tf.InteractiveSession()
-
-            # embedding = tf.Variable(dropout, name='embedding', trainable=False)
-
-            # saver = tf.train.Saver([embedding])
-            #
-            # sess.run(embedding.initializer)
-            #
-            # saver.save(sess, os.path.join(LOG_DIR, 'filename.ckpt'))
-            # tf.concat([tf.cast(features['data'], tf.float32), dropout], 0)
 
             """ ---------------------------------------------------------------------------------------------------- """
 
@@ -154,7 +106,8 @@ class Model:
             tf.summary.histogram("l2_normalized", l2_normalized)
 
             dense3 = tf.layers.dense(inputs=l2_normalized, kernel_initializer=tf.initializers.random_normal,
-                                     units=EMBEDDING_SIZE, activation=tf.nn.tanh, name='dense3')
+                                     kernel_regularizer=tf.contrib.layers.l2_regularizer,
+                                     units=EMBEDDING_SIZE, name='dense3')
 
             tf.summary.histogram("dense3", dense3)
 
@@ -193,7 +146,7 @@ class Model:
                     start_learning_rate,  # Base learning rate.
                     tf.train.get_global_step(),  # Current index into the dataset.
                     1000,  # Decay step.
-                    0.5,  # Decay rate.
+                    0.75,  # Decay rate.
                     staircase=True,
                     name='learning_rate'
                 )
@@ -208,7 +161,7 @@ class Model:
                                                   ))
 
             # Add evaluation metrics (for EVAL mode)
-            accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
+            accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"], name='accuracy')
 
             tf.summary.histogram('accuracy', accuracy)
 

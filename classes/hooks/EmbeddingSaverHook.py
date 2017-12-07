@@ -29,7 +29,7 @@ class EmbeddingSaverHook(tf.train.SessionRunHook):
         # self._l2_normalized = tf.get_variable("l2_normalized", [batch_size, 1024])
         self._dense3 = tf.get_variable("dense3", [batch_size, EMBEDDING_SIZE])
 
-        self._tdense3 = tf.get_default_graph().get_tensor_by_name("dense3/Tanh:0")
+        self._tdense3 = tf.get_default_graph().get_tensor_by_name("dense3/BiasAdd:0")
 
         self._labels = tf.get_default_graph().get_tensor_by_name("labels:0")
 

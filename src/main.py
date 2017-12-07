@@ -25,7 +25,8 @@ def serve(args):
     # try:
         model = Model()
 
-        config = tf.contrib.learn.RunConfig(save_checkpoints_steps=FLAGS.steps/10)
+        # config = tf.contrib.learn.RunConfig(save_checkpoints_steps=FLAGS.steps/10)
+        config = tf.contrib.learn.RunConfig()
 
         # Create the Estimator
         classifier = tf.estimator.Estimator(model_fn=model.inference, config=config, model_dir=LOG_DIR)
@@ -33,7 +34,8 @@ def serve(args):
         # Set up logging for predictions
         tensors_to_log = {
             # "probabilities": "softmax_tensor"
-            "learning_rate": "learning_rate"
+            # "learning_rate": "learning_rate"
+            # "accuracy": "accuracy"
         }
 
         if FLAGS.train:
@@ -144,7 +146,8 @@ if __name__ == '__main__':
 
     logging.info('Evaluate argument passed..')
 
-    parser.add_argument('--steps', default=10000, help='Number of steps.')
+    # parser.add_argument('--steps', default=10000, help='Number of steps.')
+    parser.add_argument('--steps', default=20000, help='Number of steps.')
 
     logging.info('Steps argument passed..')
 
