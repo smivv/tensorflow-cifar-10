@@ -1,8 +1,10 @@
 import sys
 import argparse
 import logging
+import os
 import numpy as np
 
+from tensorflow.contrib.tensorboard.plugins import projector
 import tensorflow as tf
 
 from classes.Model import Model
@@ -14,12 +16,16 @@ logging.basicConfig(level=logging.INFO)
 
 FLAGS = None
 
+emb_values = []
+emb_labels = []
+emb_captions = []
+
 
 def serve(args):
     # try:
         model = Model()
 
-        config = tf.contrib.learn.RunConfig(save_checkpoints_secs=30)
+        config = tf.contrib.learn.RunConfig(save_checkpoints_steps=FLAGS.steps/10)
 
         # Create the Estimator
         classifier = tf.estimator.Estimator(model_fn=model.inference, config=config, model_dir=LOG_DIR)
@@ -27,6 +33,7 @@ def serve(args):
         # Set up logging for predictions
         tensors_to_log = {
             # "probabilities": "softmax_tensor"
+            "learning_rate": "learning_rate"
         }
 
         if FLAGS.train:
@@ -40,7 +47,7 @@ def serve(args):
                 # logging hook
                 tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50),
                 # saver hook
-                EmbeddingSaverHook(data, labels)
+                EmbeddingSaverHook(emb_values, emb_labels, emb_captions)
                 # summary hook
                 # tf.train.SummarySaverHook(save_secs=2, output_dir=LOG_DIR,
                 #                           scaffold=tf.train.Scaffold(
@@ -69,7 +76,7 @@ def serve(args):
                 # logging hook
                 tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50),
                 # saver hook
-                EmbeddingSaverHook(data, labels)
+                EmbeddingSaverHook(emb_values, emb_labels, emb_captions)
                 # summary hook
                 # tf.train.SummarySaverHook(save_secs=2, output_dir=Constants.LOG_DIR,
                 #                           scaffold=tf.train.Scaffold(
@@ -88,7 +95,38 @@ def serve(args):
 
             # classifier.predict(input_fn=test_input_fn)
 
-            classifier.evaluate(input_fn=test_input_fn, steps=500, hooks=hooks)
+            classifier.evaluate(input_fn=test_input_fn, steps=100, hooks=hooks)
+
+            with open(os.path.join(LOG_DIR, 'projector/metadata.tsv'), 'w+') as f:
+                f.write('Index\tCaption\tLabel\n')
+                for idx in range(len(emb_labels)):
+                    f.write('{:05d}\t{}\t{}\n'
+                            .format(idx, emb_captions[idx], emb_labels[idx]))
+                f.close()
+
+            with tf.Session() as sess:
+                # The embedding variable to be stored
+                embedding_var = tf.Variable(np.array(emb_values), name='emb_values')
+                sess.run(embedding_var.initializer)
+
+                config = projector.ProjectorConfig()
+                embedding = config.embeddings.add()
+                embedding.tensor_name = embedding_var.name
+
+                # Add metadata to the log
+                embedding.metadata_path = os.path.join(LOG_DIR, "projector/metadata.tsv")
+
+                # Add sprites to the log
+                # embedding.sprite.image_path = os.path.join(
+                #     FLAGS.test_dir, 'sprite.png')
+                # embedding.sprite.single_image_dim.extend(
+                #     [imgs.shape[1], imgs.shape[1]])
+
+                summary_writer = tf.summary.FileWriter(os.path.join(LOG_DIR, 'projector/'), sess.graph)
+                projector.visualize_embeddings(summary_writer, config)
+
+                saver = tf.train.Saver([embedding_var])
+                saver.save(sess, os.path.join(LOG_DIR, "projector/model_emb.ckpt"), 1)
 
     # except Exception as e:
     #     print(e)

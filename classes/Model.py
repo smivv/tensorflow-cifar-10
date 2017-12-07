@@ -96,7 +96,7 @@ class Model:
 
     """--------------------------------------------------------------------------------------------------------------"""
 
-    def inference(self, features, labels, mode):
+    def inference(self, features, labels, mode, params):
         """
 
         1) [INPUT] -> [CONV] -> [POOL] -> [CONV] -> [POOL] -> [FC] -> [DROPOUT] -> [LOGITS]
@@ -129,11 +129,11 @@ class Model:
             with tf.variable_scope('FullyConnectedLayer'):
                 pool2_flat = tf.reshape(pool2, [-1, 8 * 8 * 64])
                 dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
-                dropout = tf.layers.dropout(inputs=dense, rate=0.4, training=(mode == tf.estimator.ModeKeys.TRAIN), name='dropout')
+                # dropout = tf.layers.dropout(inputs=dense, rate=0.4, training=(mode == tf.estimator.ModeKeys.TRAIN))
 
             logging.info('Fully Connected Layer build successful..')
 
-            tf.summary.histogram('dropout', dropout)
+            # tf.summary.histogram('dropout', dropout)
 
             """ ---------------------------------------------------------------------------------------------------- """
             # sess = tf.InteractiveSession()
@@ -149,11 +149,12 @@ class Model:
 
             """ ---------------------------------------------------------------------------------------------------- """
 
-            l2_normalized = tf.nn.l2_normalize(dropout, dim=1, name='l2_normalized')
+            l2_normalized = tf.nn.l2_normalize(dense, dim=1)
 
             tf.summary.histogram("l2_normalized", l2_normalized)
 
-            dense3 = tf.layers.dense(inputs=l2_normalized, units=EMBEDDING_SIZE, activation=tf.nn.relu, name='dense3')
+            dense3 = tf.layers.dense(inputs=l2_normalized, kernel_initializer=tf.initializers.random_normal,
+                                     units=EMBEDDING_SIZE, activation=tf.nn.tanh, name='dense3')
 
             tf.summary.histogram("dense3", dense3)
 
@@ -179,7 +180,7 @@ class Model:
 
             # Calculate Loss (for both TRAIN and EVAL modes)
             labels = tf.identity(labels, name='labels')
-            onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=10)
+            onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=10, name='one_hot_labels')
             loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=logits)
 
             tf.summary.histogram('loss', loss)
@@ -188,8 +189,17 @@ class Model:
 
             # Configure the Training Op (for TRAIN mode)
             if mode == tf.estimator.ModeKeys.TRAIN:
-                learning_rate = tf.train.exponential_decay(start_learning_rate, tf.train.get_global_step(), 1000, 0.75, staircase=True)
+                learning_rate = tf.train.exponential_decay(
+                    start_learning_rate,  # Base learning rate.
+                    tf.train.get_global_step(),  # Current index into the dataset.
+                    1000,  # Decay step.
+                    0.5,  # Decay rate.
+                    staircase=True,
+                    name='learning_rate'
+                )
+
                 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+                # optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
                 train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
                 return tf.estimator.EstimatorSpec(mode=mode, loss=loss,
                                                   train_op=train_op,

@@ -33,7 +33,7 @@ if MODEL == 10:
 else:
     DATA_DIR = os.path.join(DIR, 'cifar-100-python')
 
-LOG_DIR = os.path.join(DIR, 'log/1/')
+LOG_DIR = os.path.join(DIR, 'log/3/')
 
 DATA_URL_CIFAR_10 = 'http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
 DATA_URL_CIFAR_100 = 'http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz'
