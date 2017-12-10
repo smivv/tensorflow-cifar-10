@@ -50,11 +50,6 @@ def serve(args):
                 tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50),
                 # saver hook
                 EmbeddingSaverHook(emb_values, emb_labels, emb_captions)
-                # summary hook
-                # tf.train.SummarySaverHook(save_secs=2, output_dir=LOG_DIR,
-                #                           scaffold=tf.train.Scaffold(
-                #                               summary_op=tf.summary.merge_all()
-                #                           ))
             ]
 
             data_to_pass = {
@@ -79,11 +74,6 @@ def serve(args):
                 tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50),
                 # saver hook
                 EmbeddingSaverHook(emb_values, emb_labels, emb_captions)
-                # summary hook
-                # tf.train.SummarySaverHook(save_secs=2, output_dir=Constants.LOG_DIR,
-                #                           scaffold=tf.train.Scaffold(
-                #                               summary_op=tf.summary.merge_all()
-                #                           ))
             ]
 
             data_to_pass = {
@@ -117,12 +107,6 @@ def serve(args):
 
                 # Add metadata to the log
                 embedding.metadata_path = os.path.join(LOG_DIR, "projector/metadata.tsv")
-
-                # Add sprites to the log
-                # embedding.sprite.image_path = os.path.join(
-                #     FLAGS.test_dir, 'sprite.png')
-                # embedding.sprite.single_image_dim.extend(
-                #     [imgs.shape[1], imgs.shape[1]])
 
                 summary_writer = tf.summary.FileWriter(os.path.join(LOG_DIR, 'projector/'), sess.graph)
                 projector.visualize_embeddings(summary_writer, config)
