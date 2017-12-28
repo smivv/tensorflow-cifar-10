@@ -1,2 +1,0 @@
-model_checkpoint_path: "/Users/vladimirsmirnov/PycharmProjects/python-tensorflow-cifar-10/log/projector/a_model.ckpt-100"
-all_model_checkpoint_paths: "/Users/vladimirsmirnov/PycharmProjects/python-tensorflow-cifar-10/log/projector/a_model.ckpt-100"
