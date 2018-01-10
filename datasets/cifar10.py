@@ -7,21 +7,21 @@ import errno
 import tqdm
 import os
 
-IMG_SIZE = 32
-NUM_CHANNELS = 3
-
-NUM_CLASSES = 10
-
-NUM_TRAIN_FILES = 5
-NUM_TEST_FILES = 1
-
-IMAGES_PER_FILE = 10000
-
-NUM_TRAIN_IMAGES = NUM_TRAIN_FILES * IMAGES_PER_FILE
-NUM_TEST_IMAGES = NUM_TEST_FILES * IMAGES_PER_FILE
-
 
 class Cifar10:
+
+    IMG_SIZE = 32
+    NUM_CHANNELS = 3
+
+    NUM_CLASSES = 10
+
+    NUM_TRAIN_FILES = 5
+    NUM_TEST_FILES = 1
+
+    IMAGES_PER_FILE = 10000
+
+    NUM_TRAIN_IMAGES = NUM_TRAIN_FILES * IMAGES_PER_FILE
+    NUM_TEST_IMAGES = NUM_TEST_FILES * IMAGES_PER_FILE
 
     def __init__(self, data_dir):
         
@@ -37,14 +37,14 @@ class Cifar10:
         """
 
         # Pre-allocate the arrays for the images and class-numbers for efficiency.
-        images = numpy.zeros(shape=[NUM_TRAIN_IMAGES, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], dtype=float)
-        labels = numpy.zeros(shape=[NUM_TRAIN_IMAGES], dtype=int)
+        images = numpy.zeros(shape=[Cifar10.NUM_TRAIN_IMAGES, Cifar10.IMG_SIZE, Cifar10.IMG_SIZE, Cifar10.NUM_CHANNELS], dtype=float)
+        labels = numpy.zeros(shape=[Cifar10.NUM_TRAIN_IMAGES], dtype=int)
 
         # Begin-index for the current batch.
         begin = 0
 
         # For each data-file.
-        for i in range(NUM_TRAIN_FILES):
+        for i in range(Cifar10.NUM_TRAIN_FILES):
             # Load the images and class-numbers from the data-file.
             images_batch, labels_batch = self._load_data(self.DATA_DIR, filename="data_batch_" + str(i + 1))
 
@@ -81,8 +81,8 @@ class Cifar10:
     @staticmethod
     def _dense_to_one_hot(labels):
         num_labels = labels.shape[0]
-        index_offset = numpy.arange(num_labels) * NUM_CLASSES
-        labels_one_hot = numpy.zeros((num_labels, NUM_CLASSES))
+        index_offset = numpy.arange(num_labels) * Cifar10.NUM_CLASSES
+        labels_one_hot = numpy.zeros((num_labels, Cifar10.NUM_CLASSES))
         labels_one_hot.flat[index_offset + labels.ravel()] = 1
         return labels_one_hot
 
@@ -107,7 +107,7 @@ class Cifar10:
         raw_float = numpy.array(raw, dtype=float) / 255.0
 
         # Reshape the array to 4-dimensions.
-        images = raw_float.reshape([-1, NUM_CHANNELS, IMG_SIZE, IMG_SIZE])
+        images = raw_float.reshape([-1, Cifar10.NUM_CHANNELS, Cifar10.IMG_SIZE, Cifar10.IMG_SIZE])
 
         # Reorder the indices of the array.
         images = images.transpose([0, 2, 3, 1])
