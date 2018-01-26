@@ -9,7 +9,7 @@ Test accuracy = 0.7166, loss = 1.09975.
 
 #### Architecture diagram
 
-<div style="text-align:center"><img src ="https://user-images.githubusercontent.com/17829173/34811773-94bbe0a4-f6b3-11e7-88d9-6ac9c464f98c.png" /></div>
+<div align=center><img src="https://user-images.githubusercontent.com/17829173/34811773-94bbe0a4-f6b3-11e7-88d9-6ac9c464f98c.png"/></div>
 
 #### Embeddings visualization
 
