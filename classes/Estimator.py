@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from models.cifar10 import Cifar10
+from nets.cifar10 import Cifar10
 
 models = {
     'cifar-10': Cifar10

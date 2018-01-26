@@ -121,8 +121,8 @@ def main(_):
         # Add metadata to the log
         embedding.metadata_path = os.path.join(FLAGS.checkpoint_dir, "projector/metadata.tsv")
 
-        summary_writer = tf.summary.FileWriter(os.path.join(FLAGS.checkpoint_dir, 'projector/'), sess.graph)
-        projector.visualize_embeddings(summary_writer, config)
+        writer = tf.summary.FileWriter(os.path.join(FLAGS.checkpoint_dir, 'projector/'), sess.graph)
+        projector.visualize_embeddings(writer, config)
 
         saver = tf.train.Saver([embedding_var])
         saver.save(sess, os.path.join(FLAGS.checkpoint_dir, "projector/model_emb.ckpt"), 1)
